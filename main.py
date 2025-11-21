@@ -1,11 +1,14 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Query
 import uvicorn
 
 import crud.crud
 from database.darabase import create_db_and_tables, SessionDep
 from contextlib import asynccontextmanager
-from models.models import ExpenseCreate, ExpensePublic, PaginationDep, Pagination, ExpenseUpdate
+from models.models import ExpenseCreate, ExpensePublic, PaginationDep, Pagination, ExpenseUpdate, Category
 from crud import crud
+from func import func
+from typing import Optional
+
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -17,8 +20,13 @@ app = FastAPI(lifespan=lifespan)
 def first_page():
     return {"message": "Hello World"}
 
+@app.get("/expense/category/", response_model=list[ExpensePublic])
+def read_category(session: SessionDep, category: Category):
+    return func.get_product(session=session, category=category)
 
-@app.post("/expenses/", response_model=ExpensePublic)
+
+
+@app.post("/expenses/", response_model=ExpensePublic, status_code=status.HTTP_201_CREATED)
 def create_expense(session: SessionDep,expense: ExpenseCreate):
     return crud.create_expense(session=session, expense=expense)
 
@@ -37,6 +45,7 @@ def expense_patch(session: SessionDep, expense_id: int, expense: ExpenseUpdate):
 @app.delete("/expense/{expense_id}")
 def expense_delete(session: SessionDep, expense_id: int):
     return crud.delete_expense(session=session, expense_id=expense_id)
+
 
 
 if __name__ == "__main__":

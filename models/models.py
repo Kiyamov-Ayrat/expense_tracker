@@ -2,11 +2,23 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 from typing import Optional, Annotated
 from fastapi.params import Query, Depends
+from enum import Enum
+
+class Category(str, Enum):
+    product = "product"
+    transport = "transport"
+    cafe = "cafe"
+    internet = "internet"
+    clothes = "clothes"
+    education = "education"
+    home = "home"
+    tax = "tax"
+    other = "other"
 
 class ExpenseBase(SQLModel):
     description: str | None = Field(default=None)
     amount: int
-    category: str
+    category: Category = Field(default=Category.other, index=True)
 
 
 class Expense(ExpenseBase, table=True):
@@ -17,12 +29,14 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpensePublic(ExpenseBase):
     id: int
+    amount: int
+    category: Category
 
 
-class ExpenseUpdate(SQLModel):
-    description: str | None = None
+class ExpenseUpdate(ExpenseBase):
+    description: Optional[str] = None
     amount: int | None = None
-    category: str | None = None
+    category: Category | None = None
 
 class Pagination(BaseModel):
     offset: int
