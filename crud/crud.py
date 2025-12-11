@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from models.models import ExpenseCreate, Expense, Pagination, ExpenseUpdate
-from database.darabase import SessionDep
+from database.database import SessionDep
 from sqlmodel import select
 
 def create_expense(session: SessionDep, expense: ExpenseCreate):

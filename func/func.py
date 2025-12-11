@@ -1,5 +1,5 @@
 
-from database.darabase import SessionDep
+from database.database import SessionDep
 from models.models import Category, Expense, ExpensePublic
 from sqlmodel import select
 from typing import Optional

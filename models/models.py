@@ -16,7 +16,7 @@ class Category(str, Enum):
     other = "other"
 
 class ExpenseBase(SQLModel):
-    description: str | None = Field(default=None)
+    description: str | None = Field(default=None, max_length=300)
     amount: int
     category: Category = Field(default=Category.other, index=True)
 
@@ -25,6 +25,17 @@ class Expense(ExpenseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
 class ExpenseCreate(ExpenseBase):
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "description": "Buy bread",
+                    "amount": 100,
+                    "category": Category.product,
+                }
+            ]
+        }
+    }
     pass
 
 class ExpensePublic(ExpenseBase):
