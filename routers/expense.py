@@ -10,9 +10,15 @@ router = APIRouter()
 
 @router.get("/expenses/category",
             response_model=list[ExpensePublic],
-            tags=["category"])
+            tags=["filter"])
 def read_category(session: SessionDep, category: Category):
     return func.get_product(session=session, category=category)
+
+@router.get("/expenses/{month}",
+            response_model=list[ExpensePublic],
+            tags=["filter"])
+def get_month(session: SessionDep, year: int, month: int):
+    return func.get_by_month(session=session, year=year, month=month)
 
 @router.post("/expenses/",
              response_model=ExpensePublic,
