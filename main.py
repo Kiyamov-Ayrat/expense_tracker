@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 import uvicorn
 
-from database.database import create_db_and_tables
+from database.database import create_db_and_tables, SessionDep
 from contextlib import asynccontextmanager
-
-
-from routers import expense
+from routers import expense, amount
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -13,7 +11,7 @@ async def lifespan(app:FastAPI):
     yield
 app = FastAPI(lifespan=lifespan)
 app.include_router(expense.router)
-
+app.include_router(amount.router)
 
 @app.get("/")
 def first_page():

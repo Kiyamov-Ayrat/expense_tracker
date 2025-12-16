@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Path
 from starlette import status
 
-from models.models import Category, ExpensePublic, ExpenseCreate, PaginationDep, ExpenseUpdate
+from models.expense import Category, ExpensePublic, ExpenseCreate, PaginationDep, ExpenseUpdate
 from func import func
 from database.database import SessionDep
 from crud import crud

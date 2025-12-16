@@ -4,6 +4,7 @@ from typing import Optional, Annotated
 from fastapi.params import Query, Depends
 from enum import Enum
 
+
 class Category(str, Enum):
     product = "product"
     transport = "transport"
