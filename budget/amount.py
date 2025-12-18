@@ -17,8 +17,11 @@ def budget_status(session: SessionDep, year: int, month: int):
                  where(func.strftime("%Y-%m", Expense.date) == year_month))
     spent = session.exec(statement).one_or_none()
     total = int(spent or 0)
+    # budget_get = (select(Budget.limit_amount).
+    #               where(func.strftime("%Y-%m", Budget.date) == year_month))
     budget_get = (select(Budget.limit_amount).
-                  where(func.strftime("%Y-%m", Budget.date) == year_month))
+                  where(Budget.year == year,
+                        Budget.month == month))
     budget = session.exec(budget_get).first()
     if budget is None:
         raise HTTPException(status_code=404, detail="Budget not found")

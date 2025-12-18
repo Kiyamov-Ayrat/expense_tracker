@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 
-from database.database import create_db_and_tables, SessionDep
+from database.database import create_db_and_tables
 from contextlib import asynccontextmanager
 from routers import expense, amount
 

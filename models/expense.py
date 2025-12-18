@@ -21,7 +21,7 @@ class ExpenseBase(SQLModel):
     description: str | None = Field(default=None, max_length=300)
     amount: int
     category: Category = Field(default=Category.other, index=True)
-    date: Date = Field(default=Date.today(), index=True, foreign_key="budget.date")
+    date: Date = Field(default=Date.today(), index=True)
 
 class Expense(ExpenseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
