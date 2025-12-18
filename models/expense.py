@@ -3,7 +3,7 @@ from sqlmodel import SQLModel, Field
 from typing import Optional, Annotated
 from fastapi.params import Query, Depends
 from enum import Enum
-from datetime import datetime
+from datetime import date as Date
 
 
 class Category(str, Enum):
@@ -21,9 +21,7 @@ class ExpenseBase(SQLModel):
     description: str | None = Field(default=None, max_length=300)
     amount: int
     category: Category = Field(default=Category.other, index=True)
-    date: datetime | None = (
-        Field(default_factory=datetime.utcnow(),
-              index=True))
+    date: Date = Field(default=Date.today(), index=True, foreign_key="budget.date")
 
 class Expense(ExpenseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -36,7 +34,7 @@ class ExpenseCreate(ExpenseBase):
                     "description": "Buy bread",
                     "amount": 100,
                     "category": Category.product,
-                    "date": datetime.utcnow(),
+                    "date": Date.today(),
                 }
             ]
         }
@@ -47,13 +45,13 @@ class ExpensePublic(ExpenseBase):
     id: int
     amount: int
     category: Category
-    date: datetime
+    date: Date
 
 class ExpenseUpdate(ExpenseBase):
     description: Optional[str] = None
     amount: int | None = None
     category: Category | None = None
-    date: Optional[datetime] = None
+    date: Optional[Date] = None
 
 class Pagination(BaseModel):
     offset: int

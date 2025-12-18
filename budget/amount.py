@@ -11,11 +11,18 @@ def set_budget(session: SessionDep, budget: BudgetCreate):
     session.refresh(db_budget)
     return db_budget
 
-def budget_status(session: SessionDep):
-    spent = session.exec(select(func.sum(Expense.amount))).one_or_none()
+def budget_status(session: SessionDep, year: int, month: int):
+    year_month = f"{year}-{month:02d}"
+    statement = (select(func.sum(Expense.amount)).
+                 where(func.strftime("%Y-%m", Expense.date) == year_month))
+    spent = session.exec(statement).one_or_none()
     total = int(spent or 0)
-    budget = int(session.exec(select(Budget.limit_amount)).first())
-    balance = budget - total
+    budget_get = (select(Budget.limit_amount).
+                  where(func.strftime("%Y-%m", Budget.date) == year_month))
+    budget = session.exec(budget_get).first()
+    if budget is None:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    balance = int(budget) - total
     is_over = balance < 0
     return {"balance": balance,
             "spent": total,

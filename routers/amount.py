@@ -11,10 +11,10 @@ router = APIRouter()
 def create_budget(session: SessionDep, budget: BudgetCreate):
     return amount.set_budget(session=session, budget=budget)
 
-@router.get("/budget/balance",
+@router.get("/budget/date",
             tags=["Budget"])
-def get_expense_balance(session: SessionDep):
-    return amount.budget_status(session=session)
+def get_budget_date(session: SessionDep, year: int, month: int):
+    return amount.budget_status(session=session, year=year, month=month)
 
 @router.patch("/budget/{budget_id}",
               response_model=BudgetPublic,
