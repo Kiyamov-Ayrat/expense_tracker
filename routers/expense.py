@@ -1,30 +1,11 @@
 from fastapi import APIRouter, Path
 from starlette import status
 
-from models.expense import Category, ExpensePublic, ExpenseCreate, PaginationDep, ExpenseUpdate
-from func import func
+from models.expense import ExpensePublic, ExpenseCreate, PaginationDep, ExpenseUpdate
 from database.database import SessionDep
 from crud import crud
 
 router = APIRouter()
-
-
-@router.get("/budg")
-def statistic(session: SessionDep, year: int, month: int):
-    return func.statistic_month(session=session, year=year, month=month)
-
-
-@router.get("/expenses/category",
-            response_model=list[ExpensePublic],
-            tags=["filter"])
-def read_category(session: SessionDep, category: Category):
-    return func.get_product(session=session, category=category)
-
-@router.get("/expenses/{month}",
-            response_model=list[ExpensePublic],
-            tags=["filter"])
-def get_month(session: SessionDep, year: int, month: int):
-    return func.get_by_month(session=session, year=year, month=month)
 
 @router.post("/expenses/",
              response_model=ExpensePublic,
@@ -57,7 +38,7 @@ def update_expense(session: SessionDep,
                                expense_id=expense_id,
                                expense=expense)
 
-@router.delete("/expenses/{expense_id",
+@router.delete("/expenses/{expense_id}",
                tags=["CRUD"])
 def delete_expense(session: SessionDep, expense_id: int):
     return crud.delete_expense(session=session, expense_id=expense_id)

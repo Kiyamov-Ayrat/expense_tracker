@@ -3,7 +3,7 @@ import uvicorn
 
 from database.database import create_db_and_tables
 from contextlib import asynccontextmanager
-from routers import expense, amount
+from routers import expense, amount, filter
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -12,6 +12,7 @@ async def lifespan(app:FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(expense.router)
 app.include_router(amount.router)
+app.include_router(filter.router)
 
 @app.get("/")
 def first_page():
