@@ -8,6 +8,12 @@ from crud import crud
 
 router = APIRouter()
 
+
+@router.get("/budg")
+def statistic(session: SessionDep, year: int, month: int):
+    return func.statistic_month(session=session, year=year, month=month)
+
+
 @router.get("/expenses/category",
             response_model=list[ExpensePublic],
             tags=["filter"])

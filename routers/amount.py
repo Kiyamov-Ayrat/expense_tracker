@@ -2,8 +2,8 @@ from budget import amount
 from fastapi import APIRouter
 from models.budget import BudgetPublic, BudgetCreate, BudgetUpdate
 from database.database import SessionDep
-
 router = APIRouter()
+
 
 @router.post("/budget",
              response_model=BudgetPublic,
