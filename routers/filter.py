@@ -3,6 +3,9 @@ from models.expense import ExpensePublic, Category
 from database.database import SessionDep
 from func import filter
 from typing import Annotated
+from io import StringIO
+from fastapi.responses import StreamingResponse
+import csv
 
 router = APIRouter()
 
@@ -27,3 +30,11 @@ def get_expense_statistic(session: SessionDep,
                           month: Annotated[int, Path(ge=1, le=12)]
                           ):
     return filter.statistic_month(session=session, year=year, month=month)
+
+
+@router.get("/filter/csv_statistic/{year}/{month}",
+            tags=["filter"])
+def get_csv_statistic(session: SessionDep,
+                      year: Annotated[int, Path(ge=2025, le=2100)],
+                      month: Annotated[int, Path(ge=1, le=12)]):
+    return filter.csv_statistic(session=session, year=year, month=month)
