@@ -58,3 +58,16 @@ def csv_statistic(session: SessionDep, year: int, month: int):
             "Content-Disposition": f"attachment; filename={filename}"
         }
     )
+
+def filter_date_category(session: SessionDep,
+                         year: int,
+                         month: int,
+                         category: Category):
+    statement = select(Expense).where(func.strftime
+                                      ("%Y-%m", Expense.date)
+                                      == f"{year}-{month:02d}",
+                                      Expense.category == category)
+    results = session.exec(statement).all()
+    if not results:
+        raise HTTPException(status_code=404, detail="No data found")
+    return results

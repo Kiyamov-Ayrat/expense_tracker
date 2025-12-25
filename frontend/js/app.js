@@ -22,6 +22,7 @@ function FinanceTracker() {
   const [stats, setStats] = useState(null);
   const [activeTab, setActiveTab] = useState('expenses');
   const [loading, setLoading] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false); // Новый state для загрузки фильтров
 
   // Форма расхода
   const [newExpense, setNewExpense] = useState({
@@ -232,26 +233,80 @@ function FinanceTracker() {
   };
 
   const filterByCategory = async () => {
-    if (!filterCategory) return loadExpenses();
-    const res = await fetch(`${API_BASE}/filter/${filterCategory}`);
-    if (res.ok) setExpenses(await res.json());
+    setFilterLoading(true);
+    try {
+      if (!filterCategory) {
+        await loadExpenses();
+      } else {
+        const res = await fetch(`${API_BASE}/filter/${filterCategory}`);
+        if (res.ok) {
+          const data = await res.json();
+          setExpenses(data);
+        }
+      }
+    } catch (err) {
+      console.error('Ошибка фильтрации по категории:', err);
+    } finally {
+      setFilterLoading(false);
+    }
   };
 
   const filterByMonth = async () => {
-    const { year, month } = filterDate;
-    const res = await fetch(`${API_BASE}/filter/${year}/${month}`);
-    if (res.ok) setExpenses(await res.json());
-    await loadStats();
-    await loadBudget();
+    setFilterLoading(true);
+    try {
+      const { year, month } = filterDate;
+      const res = await fetch(`${API_BASE}/filter/${year}/${month}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpenses(data);
+      }
+      await loadStats();
+      await loadBudget();
+    } catch (err) {
+      console.error('Ошибка фильтрации по дате:', err);
+    } finally {
+      setFilterLoading(false);
+    }
   };
 
-  // НОВАЯ ФУНКЦИЯ: Фильтрация по категории и дате одновременно
+  // ОБНОВЛЕННАЯ ФУНКЦИЯ: Теперь использует новый эндпоинт бэкенда
   const filterByCategoryAndDate = async () => {
-    if (!filterCategory) {
-      // Если категория не выбрана, фильтруем только по дате
-      return filterByMonth();
-    }
+    setFilterLoading(true);
+    try {
+      const { year, month } = filterDate;
 
+      if (!filterCategory) {
+        // Если категория не выбрана, фильтруем только по дате
+        await filterByMonth();
+        return;
+      }
+
+      // Используем новый эндпоинт для одновременной фильтрации по дате и категории
+      const res = await fetch(`${API_BASE}/filter/${year}/${month}/${filterCategory}`);
+
+      if (res.ok) {
+        const data = await res.json();
+        setExpenses(data);
+        // Также обновляем статистику и бюджет
+        await loadStats();
+        await loadBudget();
+      } else {
+        console.error('Ошибка фильтрации по дате и категории');
+        // Fallback: если эндпоинт не работает, используем старый метод
+        console.log('Используем fallback фильтрацию...');
+        await fallbackFilterByCategoryAndDate();
+      }
+    } catch (err) {
+      console.error('Ошибка фильтрации по дате и категории:', err);
+      // Fallback на случай ошибки
+      await fallbackFilterByCategoryAndDate();
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  // Fallback метод на случай, если новый эндпоинт не работает
+  const fallbackFilterByCategoryAndDate = async () => {
     const { year, month } = filterDate;
 
     try {
@@ -267,10 +322,10 @@ function FinanceTracker() {
       );
 
       setExpenses(filtered);
-      await loadStats(); // Обновляем статистику
-      await loadBudget(); // Обновляем бюджет
+      await loadStats();
+      await loadBudget();
     } catch (err) {
-      console.error('Ошибка фильтрации:', err);
+      console.error('Ошибка fallback фильтрации:', err);
       alert('Ошибка при фильтрации');
     }
   };
@@ -344,6 +399,14 @@ function FinanceTracker() {
         loadBudgetHistory();
       }
     }, 100);
+  };
+
+  // Функция сброса всех фильтров
+  const resetAllFilters = async () => {
+    setFilterCategory('');
+    setFilterDate({ year: today.getFullYear(), month: today.getMonth() + 1 });
+    await loadExpenses();
+    setFilterLoading(false);
   };
 
   // Загружаем историю бюджета при переключении на вкладку
@@ -458,6 +521,12 @@ function FinanceTracker() {
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <i data-lucide="filter" className="w-5 h-5 text-indigo-600"></i>
                 Фильтры
+                {filterLoading && (
+                  <span className="text-sm text-slate-500 ml-2 flex items-center gap-1">
+                    <i data-lucide="loader" className="w-4 h-4 animate-spin"></i>
+                    Загрузка...
+                  </span>
+                )}
               </h3>
               <div className="flex gap-3 flex-wrap items-end">
                 <div className="space-y-1">
@@ -466,6 +535,7 @@ function FinanceTracker() {
                     value={filterCategory}
                     onChange={e => setFilterCategory(e.target.value)}
                     className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    disabled={filterLoading}
                   >
                     <option value="">Все категории</option>
                     {categoryOptions.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
@@ -480,6 +550,7 @@ function FinanceTracker() {
                     value={filterDate.year}
                     onChange={e => setFilterDate({...filterDate, year: parseInt(e.target.value)})}
                     className="w-24 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    disabled={filterLoading}
                   />
                 </div>
 
@@ -493,13 +564,15 @@ function FinanceTracker() {
                     value={filterDate.month}
                     onChange={e => setFilterDate({...filterDate, month: parseInt(e.target.value)})}
                     className="w-24 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    disabled={filterLoading}
                   />
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     onClick={filterByCategory}
-                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2"
+                    disabled={filterLoading}
+                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 disabled:opacity-50"
                   >
                     <i data-lucide="tag" className="w-4 h-4"></i>
                     Только категория
@@ -507,41 +580,67 @@ function FinanceTracker() {
 
                   <button
                     onClick={filterByMonth}
-                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2"
+                    disabled={filterLoading}
+                    className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 disabled:opacity-50"
                   >
                     <i data-lucide="calendar" className="w-4 h-4"></i>
                     Только дата
                   </button>
 
-                  {/* НОВАЯ КНОПКА: Фильтр по категории и дате */}
+                  {/* ОБНОВЛЕННАЯ КНОПКА: Теперь использует бэкенд */}
                   <button
                     onClick={filterByCategoryAndDate}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+                    disabled={filterLoading || (!filterCategory)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50"
                   >
                     <i data-lucide="filter" className="w-4 h-4"></i>
                     Категория + дата
                   </button>
 
                   <button
-                    onClick={loadExpenses}
-                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2"
+                    onClick={resetAllFilters}
+                    disabled={filterLoading}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2 disabled:opacity-50"
                   >
                     <i data-lucide="refresh-cw" className="w-4 h-4"></i>
-                    Сбросить
+                    Сбросить все
                   </button>
                 </div>
               </div>
 
               {/* Подсказка */}
               <p className="text-sm text-slate-500 mt-3">
-                Используйте "Категория + дата" для одновременной фильтрации по обоим параметрам
+                Используйте "Категория + дата" для одновременной фильтрации по обоим параметрам (работает через бэкенд)
               </p>
+
+              {/* Информация о текущем фильтре */}
+              {(filterCategory || filterDate.year !== today.getFullYear() || filterDate.month !== today.getMonth() + 1) && (
+                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <i data-lucide="info" className="w-4 h-4 inline mr-1"></i>
+                    Активные фильтры:
+                    {filterCategory && ` Категория: ${categoryMapping[filterCategory] || filterCategory}`}
+                    {filterDate.year !== today.getFullYear() || filterDate.month !== today.getMonth() + 1 ?
+                      ` Дата: ${filterDate.month}/${filterDate.year}` : ''}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Список расходов с датой */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-slate-800">Список расходов ({expenses.length})</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Список расходов ({expenses.length})
+                  </h3>
+                  {filterLoading && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      <i data-lucide="loader" className="w-3 h-3 inline animate-spin mr-1"></i>
+                      Применяем фильтры...
+                    </p>
+                  )}
+                </div>
                 {filterCategory && (
                   <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
                     Категория: {categoryMapping[filterCategory] || filterCategory}
@@ -549,9 +648,18 @@ function FinanceTracker() {
                 )}
               </div>
               <div className="space-y-2">
-                {expenses.length === 0 ? (
+                {filterLoading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3"></div>
+                    <p className="text-slate-500">Загрузка отфильтрованных данных...</p>
+                  </div>
+                ) : expenses.length === 0 ? (
                   <div className="empty-state">
-                    <p className="text-center text-slate-500 py-8">Расходов нет</p>
+                    <p className="text-center text-slate-500 py-8">
+                      {filterCategory || filterDate.year !== today.getFullYear() || filterDate.month !== today.getMonth() + 1
+                        ? 'Нет расходов по выбранным фильтрам'
+                        : 'Расходов нет'}
+                    </p>
                   </div>
                 ) : (
                   expenses.map(exp => (

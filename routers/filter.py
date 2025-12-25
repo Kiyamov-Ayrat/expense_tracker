@@ -35,3 +35,14 @@ def get_csv_statistic(session: SessionDep,
                       year: Annotated[int, Path(ge=2025, le=2100)],
                       month: Annotated[int, Path(ge=1, le=12)]):
     return filter.csv_statistic(session=session, year=year, month=month)
+
+@router.get("/filter/{year}/{month}/{category}",
+            tags=["filter"])
+def get_data_by_date_category(session: SessionDep,
+                              year: Annotated[int, Path(ge=2025, le=2100)],
+                              month: Annotated[int, Path(ge=1, le=12)],
+                              category: Category):
+    return filter.filter_date_category(session=session,
+                                       year=year,
+                                       month=month,
+                                       category=category)
