@@ -22,9 +22,9 @@ app.include_router(expense.router)
 app.include_router(amount.router)
 app.include_router(filter.router)
 
-# @app.get("/")
-# def first_page():
-#     return {"message": "Hello World"}
+@app.get("/")
+def first_page():
+    return {"message": "Hello World"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
