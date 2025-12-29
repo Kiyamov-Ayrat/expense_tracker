@@ -1,0 +1,14 @@
+.venv
+database.db
+.git
+.gitignore
+
+__pycache__/
+.idea/
+
+*.log
+logs/
+
+Dockerfile
+.dockerignore
+docker-compose.yml
